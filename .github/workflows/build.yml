@@ -26,8 +26,8 @@ jobs:
 
       - name: Install platform
         run: |
-          arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-          arduino-cli core install esp32:esp32 --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core update-index --additional-urls https://api.jsonbin.io/v3/qs/66291472e41b4d34e4e97631
+          arduino-cli core install esp32:esp32 --additional-urls https://api.jsonbin.io/v3/qs/66291472e41b4d34e4e97631
 
       - name: Install libraries
         run: |
