@@ -77,7 +77,7 @@ jobs:
           path: |
             build/ESP32-SOCKETIO.ino.bin
             build/ESP32-SOCKETIO.ino.partitions.bin
-            build/spiffs.bin
+            build/ESP32-SOCKETIO.ino.bootloader.bin
 
       - name: Create Release
         id: create_release
