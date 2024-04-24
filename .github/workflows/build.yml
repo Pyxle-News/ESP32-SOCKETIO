@@ -17,25 +17,22 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install requirements
         run: |
           pip install pyserial
           echo ${{github.ref}}
-
       - name: Install platform
         run: |
-          arduino-cli core update-index --additional-urls https://api.jsonbin.io/v3/qs/66291472e41b4d34e4e97631
-          arduino-cli core install esp32:esp32 --additional-urls https://api.jsonbin.io/v3/qs/66291472e41b4d34e4e97631
-
+          arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core install esp32:esp32 --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
       - name: Install libraries
         run: |
           arduino-cli lib install FastLED
           arduino-cli lib install WebSockets
           arduino-cli lib install ArduinoJson
           arduino-cli lib install AceButton
-
       - name: Checkout ESPAsyncWebServer
         uses: actions/checkout@v2
         with:
@@ -59,38 +56,23 @@ jobs:
           mv ESPAsyncWebServer /home/runner/Arduino/libraries/ESPAsyncWebServer
           mv AsyncTCP /home/runner/Arduino/libraries/AsyncTCP
           mv SocketIoClient /home/runner/Arduino/libraries/SocketIoClient
-
       - name: Compile
         run: |
           mkdir build
           echo "Compiling ${{github.repository}}..."
           arduino-cli compile -v -b esp32:esp32:esp32 --build-properties build.partitions=minimal,upload.maximum_size=1966080 --output-dir build ESP32-SOCKETIO
-
       - name: Create spiffs binary
         run: |
           /home/runner/.arduino15/packages/esp32/tools/mkspiffs/0.2.3/mkspiffs -c ESP32-SOCKETIO/data -b 4096 -p 256 -s 0xB0000 build/spiffs.bin
-
-      - name: Checkout esp_binary_merger
-        uses: actions/checkout@v2
-        with:
-          repository: vtunr/esp32_binary_merger
-          path: esp32_binary_merger
-
-      - name: Merge binaries
-        run: |
-          python esp32_binary_merger/merge_bin_esp.py \
-            --output_name app-combined.bin \
-            --bin_path /home/runner/Arduino15/packages/esp32/hardware/esp32/1.0.5/tools/sdk/bin/bootloader_dio_80m.bin build/ESP32-SOCKETIO.ino.partitions.bin build/ESP32-SOCKETIO.ino.bin build/spiffs.bin \
-            --bin_address 0x1000 0x8000 0x10000 0x150000
-          mv output/app-combined.bin build/app-combined.bin
-          mv build/ESP32-SOCKETIO.ino.bin build/app.bin
-
-      - name: Upload artifacts
+      - name: Upload binaries
         uses: actions/upload-artifact@v2
         with:
-          name: build
-          path: build/
-
+          name: binaries
+          path: |
+            build/ESP32-SOCKETIO.ino.bin
+            build/ESP32-SOCKETIO.ino.partitions.bin
+            build/ESP32-SOCKETIO.ino.bootloader.bin
+            build/spiffs.bin
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -103,26 +85,14 @@ jobs:
           draft: true
           prerelease: false
 
-      - name: Upload app-combined.bin to Release
-        id: upload-release-asset-1
+      - name: Upload binaries to Release
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app-combined.bin
-          asset_name: app-combined.bin
-          asset_content_type: application/octet-stream
-
-      - name: Upload app.bin to Release
-        id: upload-release-asset-2
-        uses: actions/upload-release-asset@v1
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app.bin
-          asset_name: app.bin
+          asset_path: build/
+          asset_name: binaries
           asset_content_type: application/octet-stream
