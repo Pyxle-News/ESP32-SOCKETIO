@@ -27,7 +27,7 @@ jobs:
       - name: Install platform
         run: |
           arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-          arduino-cli core install esp32:esp32 --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core install esp32:esp32s2 --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
       - name: Install libraries
         run: |
@@ -64,7 +64,7 @@ jobs:
         run: |
           mkdir build
           echo "Compiling ${{github.repository}}..."
-          arduino-cli compile -v -b esp32:esp32:esp32 --build-properties build.partitions=minimal,upload.maximum_size=1966080 --output-dir build ESP32-SOCKETIO
+          arduino-cli compile -v -b esp32s2:esp32s2:esp32s2 --build-properties build.partitions=minimal,upload.maximum_size=1966080 --output-dir build ESP32-SOCKETIO
 
       - name: Create spiffs binary
         run: |
