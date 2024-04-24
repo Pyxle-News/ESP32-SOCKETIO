@@ -17,7 +17,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.11'
+          python-version: '2.7'
 
       - name: Install requirements
         run: |
@@ -70,26 +70,14 @@ jobs:
         run: |
           /home/runner/.arduino15/packages/esp32/tools/mkspiffs/0.2.3/mkspiffs -c ESP32-SOCKETIO/data -b 4096 -p 256 -s 0xB0000 build/spiffs.bin
 
-      - name: Checkout esp_binary_merger
-        uses: actions/checkout@v2
-        with:
-          repository: vtunr/esp32_binary_merger
-          path: esp32_binary_merger
-
-      - name: Merge binaries
-        run: |
-          python esp32_binary_merger/merge_bin_esp.py \
-            --output_name app-combined.bin \
-            --bin_path /home/runner/.arduino15/packages/esp32/hardware/esp32/1.0.5/tools/sdk/bin/bootloader_dio_80m.bin build/ESP32-SOCKETIO.ino.partitions.bin build/ESP32-SOCKETIO.ino.bin build/spiffs.bin \
-            --bin_address 0x1000 0x8000 0x10000 0x150000
-          mv output/app-combined.bin build/app-combined.bin
-          mv build/ESP32-SOCKETIO.ino.bin build/app.bin
-
-      - name: Upload artifacts
+      - name: Upload binaries
         uses: actions/upload-artifact@v2
         with:
-          name: build
-          path: build/
+          name: binaries
+          path: |
+            build/ESP32-SOCKETIO.ino.bin
+            build/ESP32-SOCKETIO.ino.partitions.bin
+            build/spiffs.bin
 
       - name: Create Release
         id: create_release
@@ -103,26 +91,14 @@ jobs:
           draft: true
           prerelease: false
 
-      - name: Upload app-combined.bin to Release
-        id: upload-release-asset-1
+      - name: Upload binaries to Release
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app-combined.bin
-          asset_name: app-combined.bin
-          asset_content_type: application/octet-stream
-
-      - name: Upload app.bin to Release
-        id: upload-release-asset-2
-        uses: actions/upload-release-asset@v1
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app.bin
-          asset_name: app.bin
+          asset_path: build/
+          asset_name: binaries
           asset_content_type: application/octet-stream
